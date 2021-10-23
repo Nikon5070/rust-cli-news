@@ -6,6 +6,7 @@ rust-version = "1.56"
 keywords = ["cli", "news"]
 license = "MIT"
 repository="https://github.com/Nikon5070/rust-cli-news"
+description="News"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
