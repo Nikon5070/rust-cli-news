@@ -23,8 +23,9 @@ fn render_articles(articles: &Articles) {
 fn main() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
 
-    let url = &format!("https://newsapi.org/v2/everything?q=tesla&from=2021-09-30&sortBy=publishedAt&apiKey={}", *API_KEY);
-    let articles = get_articles(url)?;
+    let url = "https://newsapi.org/v2/everything?q=tesla&from=2021-09-30&sortBy=publishedAt&apiKey=";
+    let url = format!("{}{}", url, *API_KEY);
+    let articles = get_articles(&url)?;
 
     render_articles(&articles);
     Ok(())
