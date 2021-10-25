@@ -1,10 +1,11 @@
+mod theme;
+
 use std::error::Error;
 use std::env;
 
 extern crate dotenv;
 
 use dotenv::dotenv;
-use colour::{dark_green, dark_blue};
 use lazy_static::lazy_static;
 use newsapi::{get_articles, Articles};
 
@@ -13,9 +14,12 @@ lazy_static! {
 }
 
 fn render_articles(articles: &Articles) {
+    let theme = theme::default();
+    theme.print_inline("# Top headlines \n\n");
     for item in &articles.articles {
-        dark_green!("> {}\n", item.title);
-        dark_blue!("> {}\n\n", item.url);
+        theme.print_text(&format!("`{}`", item.title));
+        theme.print_text(&format!("> *{}*", item.url));
+        theme.print_text("---");
     }
 }
 

@@ -10,7 +10,8 @@ description = "News"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-colour = "0.6.0"
+crossterm = "0.21.0"
 dotenv = "0.15.0"
 lazy_static = "1.4.0"
 newsapi = { path = "./newsapi" }
+termimad = "0.16.4"
