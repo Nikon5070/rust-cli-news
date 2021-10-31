@@ -6,19 +6,14 @@ use std::env;
 extern crate dotenv;
 
 use dotenv::dotenv;
-use lazy_static::lazy_static;
-use newsapi::{get_articles, Articles};
+use newsapi::{NewsAPI, Endpoint, Country, Article};
 
-lazy_static! {
-    static ref API_KEY: String = env::var("API_KEY").unwrap();
-}
-
-fn render_articles(articles: &Articles) {
+fn render_articles(articles: &[Article]) {
     let theme = theme::default();
     theme.print_inline("# Top headlines \n\n");
-    for item in &articles.articles {
-        theme.print_text(&format!("`{}`", item.title));
-        theme.print_text(&format!("> *{}*", item.url));
+    for item in articles {
+        theme.print_text(&format!("`{}`", item.title()));
+        theme.print_text(&format!("> *{}*", item.url()));
         theme.print_text("---");
     }
 }
@@ -26,11 +21,14 @@ fn render_articles(articles: &Articles) {
 
 fn main() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
+    let api_key = env::var("API_KEY")?;
 
-    let url = "https://newsapi.org/v2/everything?q=tesla&from=2021-09-30&sortBy=publishedAt&apiKey=";
-    let url = format!("{}{}", url, *API_KEY);
-    let articles = get_articles(&url)?;
+    let mut news_api = NewsAPI::new(&api_key);
+    news_api.endpoint(Endpoint::TopHeadlines).country(Country::Us);
+    //
+    // let url = "https://newsapi.org/v2/top-headlines?country=us&apiKey=";
+    let news_api_response = news_api.fetch()?;
 
-    render_articles(&articles);
+    render_articles(news_api_response.articles());
     Ok(())
 }
