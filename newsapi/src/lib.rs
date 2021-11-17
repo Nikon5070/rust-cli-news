@@ -1,6 +1,7 @@
+#[cfg(feature = "async")]
+use reqwest::Method;
 use serde::Deserialize;
 use url::Url;
-
 
 const BASE_URL: &str = "https://newsapi.org/v2";
 
@@ -16,14 +17,15 @@ pub enum NewsApiError {
     UrlParsing(#[from] url::ParseError),
     #[error("Request failed: {0}")]
     BadRequest(&'static str),
+    #[error("Async request failed")]
+    AsyncRequestFailed(#[from] reqwest::Error),
 }
-
 
 #[derive(Deserialize, Debug)]
 pub struct NewsApiResponse {
     status: String,
     pub articles: Vec<Article>,
-    code: Option<String>
+    code: Option<String>,
 }
 impl NewsApiResponse {
     pub fn articles(&self) -> &Vec<Article> {
@@ -48,7 +50,7 @@ impl Article {
 }
 
 pub enum Endpoint {
-    TopHeadlines
+    TopHeadlines,
 }
 impl ToString for Endpoint {
     fn to_string(&self) -> String {
@@ -98,7 +100,9 @@ impl NewsAPI {
 
     fn prepare_url(&self) -> Result<String, NewsApiError> {
         let mut url = Url::parse(BASE_URL)?;
-        url.path_segments_mut().unwrap().push(&self.endpoint.to_string());
+        url.path_segments_mut()
+            .unwrap()
+            .push(&self.endpoint.to_string());
 
         let country = format!("country={}", &self.country.to_string());
         url.set_query(Some(&country));
@@ -113,7 +117,29 @@ impl NewsAPI {
 
         match response.status.as_str() {
             "ok" => Ok(response),
-            _ => Err(map_response_err(response.code))
+            _ => Err(map_response_err(response.code)),
+        }
+    }
+
+    #[cfg(feature = "async")]
+    pub async fn fetch_async(&self) -> Result<NewsApiResponse, NewsApiError> {
+        let url = self.prepare_url()?;
+        let client = reqwest::Client::new();
+        let request = client
+            .request(Method::GET, url)
+            .header("Authorization", &self.api_key)
+            .build()
+            .map_err(NewsApiError::AsyncRequestFailed)?;
+        let response: NewsApiResponse = client
+            .execute(request)
+            .await?
+            .json()
+            .await
+            .map_err(NewsApiError::AsyncRequestFailed)?;
+        //
+        match response.status.as_str() {
+            "ok" => Ok(response),
+            _ => Err(map_response_err(response.code)),
         }
     }
 }
@@ -122,12 +148,11 @@ fn map_response_err(code: Option<String>) -> NewsApiError {
     if let Some(code) = code {
         match code.as_str() {
             "apiKeyDisabled" => NewsApiError::BadRequest("Your API key has been disabled"),
-            _ => NewsApiError::BadRequest("Unknown error")
+            _ => NewsApiError::BadRequest("Unknown error"),
         }
     } else {
         NewsApiError::BadRequest("Unknown error")
     }
-
 }
 
 #[cfg(test)]

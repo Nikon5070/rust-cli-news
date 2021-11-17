@@ -13,5 +13,6 @@ description = "News"
 crossterm = "0.21.0"
 dotenv = "0.15.0"
 lazy_static = "1.4.0"
-newsapi = { path = "./newsapi" }
+newsapi = { path = "./newsapi", features = ["async"] }
 termimad = "0.16.4"
+tokio = { version = "1.14.0", features = ["full"] }
